@@ -7,7 +7,7 @@ function _ensureShoutOutLogFile {
     if (!(Test-Path $logFile -PathType Leaf)) {
         $logDir = Split-Path $logFile -Parent
         try {
-            return new-Item $logFile -ItemType File -ErrorAction Stop
+            return new-Item $logFile -ItemType File -Force -ErrorAction Stop
         } catch {
             "Unable to create log file '{0}' for '{1}'." -f $logFile, $msgType | shoutOut -MsgType Error
             "Messages marked with '{0}' will be redirected." -f $msgType | shoutOut -MsgType Error
