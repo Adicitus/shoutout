@@ -1,6 +1,19 @@
 # ShoutOut.ps1
 
 # First-things first: Logging function (is the realest, push the message and let the harddrive feel it.)
+
+<#
+.SYNOPSIS
+Pushes a message of the given $MsgType to the given $Log file with attached invocation metadata.
+.DESCRIPTION
+Logging function, used to push a message to a corresponding log-file.
+The message is prepended with meta data about the invocation to shoutOut as:
+<MessageType>|<Computer name>|<PID>|<calling Context>|<Date & time>|$Message
+
+The default values for the parameters can be set using the Set-ShoutOutConfig,
+Set-ShoutOutDefaultLog, and Set-ShotOutRedirect functions.
+
+#>
 function shoutOut {
 	param(
         [parameter(Mandatory=$false,  position=1, ValueFromPipeline=$true)] [Object]$Message,
@@ -33,7 +46,7 @@ function shoutOut {
 
         # Hard-coded defaults just in case.
         if (!$MsgType) { $MsgType = "Information" }
-        if (!$Log) { $Log = ".\setup.log" }
+        if (!$Log) { $Log = ".\shoutout.log" }
         
         if (!$msgStyle) {
             if ($MsgType -in [enum]::GetNames([System.ConsoleColor])) {
