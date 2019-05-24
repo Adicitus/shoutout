@@ -19,6 +19,37 @@ function shoutOut {
     process {
         $defaultLogHandler = { param($msg) $msg | Out-File $Log -Encoding utf8 -Append }
 
+        $msgObjectType = if ($null -ne $Message) {
+            $Message.GetType()
+        } else {
+            $null
+        }
+
+        $msgObjectTypeName = if ($null -ne $msgObjectType) {
+            $msgObjectType.Name
+        } else {
+            "NULL"
+        }
+
+        
+        if ( (-not $PSBoundParameters.ContainsKey("MsgType")) -or ($null -eq $PSBoundParameters["MsgType"]) ) {
+            
+            switch ($msgObjectTypeName) {
+
+                "ErrorRecord" {
+                    $MsgType = "Error"
+                }
+
+                default {
+                    if ([System.Exception].IsAssignableFrom($msgObjectType)) {
+                        $MsgType = "Exception"
+                    } else {
+                        $MsgType = "Info"
+                    }
+                }
+            }
+        }
+
         # Apply global settings.
         if ( ( $settingsV = Get-Variable "_ShoutOutSettings" ) -and ($settingsV.Value -is [hashtable]) ) {
             $settings = $settingsV.Value
@@ -32,7 +63,6 @@ function shoutOut {
         }
 
         # Hard-coded defaults just in case.
-        if (!$MsgType) { $MsgType = "Information" }
         if (!$Log) { $Log = ".\setup.log" }
         
         if (!$msgStyle) {
@@ -44,10 +74,28 @@ function shoutOut {
         }
         
         # Apply formatting to make output more readable.
-        if ($Message -isnot [String]) {
-            $message = $message | Out-String
+        switch ($msgObjectTypeName) {
+
+            "String" {
+                # No transformation necessary.
+            }
+
+            "NULL" {
+                # No Transformation necessary.
+            }
+
+            "ErrorRecord" {
+                $m = $message
+                $Message = $m.Exception, $m.CategoryInfo, $m.InvocationInfo, $m.ScriptStackTrace | Out-string | % Split "`n`r" | ? { $_ }
+                $Message = $Message | Out-String | % TrimEnd "`n`r"
+            }
+
+            default {
+                $message = $Message | Out-String | % TrimEnd "`n`r"
+            }
         }
 
+        # Print to console if necessary
 	    if ([Environment]::UserInteractive -and !$Quiet) {
             $p = @{
                 Object = $Message
@@ -95,7 +143,7 @@ function shoutOut {
 
         $createRecord = {
             param($m)
-            "{0}|{1}|{2}|{3}|{4:yyyyMMdd-HH:mm:ss}|{5}" -f $MsgType, $env:COMPUTERNAME, $pid, $parentContext, [datetime]::Now, $m
+            "{0}|{1}|{2}|{3}|{4:yyyyMMdd-HH:mm:ss}|{5}|{6}" -f $MsgType, $env:COMPUTERNAME, $pid, $parentContext, [datetime]::Now, $msgObjectTypeName, $m
         }
 
         $record = . $createRecord $Message
