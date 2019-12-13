@@ -12,6 +12,7 @@ if ( !(Get-variable "_ShoutOutSettings" -ErrorAction SilentlyContinue) -or $scri
             Result =        @{ ForegroundColor="White" }
         }
         LogContext=$true
+        Disabled=$false
     }
 }
 

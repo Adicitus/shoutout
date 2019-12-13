@@ -66,6 +66,12 @@ function shoutOut {
         # Apply global settings.
         if ( ( $settingsV = Get-Variable "_ShoutOutSettings" ) -and ($settingsV.Value -is [hashtable]) ) {
             $settings = $settingsV.Value
+
+            if ($settings.ContainsKey("Disabled") -and ($settings.Disabled)) {
+                Write-Debug "Call to Shoutout, but Shoutout is disabled. Turn back on with 'Set-ShoutOutConfig -Disabled `$false'."
+                return
+            }
+
             if (!$MsgType -and $settings.containsKey("DefaultMsgType")) { $MsgType = $settings.DefaultMsgType }
             if (!$Log -and $settings.containsKey("DefaultLog")) { $Log = $settings.DefaultLog }
             if ($settings.LogFileRedirection.ContainsKey($MsgType)) { $Log = $settings.LogFileRedirection[$MsgType] }

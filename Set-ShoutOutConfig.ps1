@@ -3,7 +3,8 @@ function Set-ShoutOutConfig {
         [string]$DefaultMsgType,
         [Alias("LogFile")]
         $Log,
-        [boolean]$LogContext
+        [boolean]$LogContext,
+        [boolean]$Disabled
     )
 
     if ($PSBoundParameters.ContainsKey("DefaultMsgType")) {
@@ -16,6 +17,10 @@ function Set-ShoutOutConfig {
 
     if ($PSBoundParameters.ContainsKey("LogContext")) {
         $_shoutOutSettings.LogContext = $LogContext
+    }
+    
+    if ($PSBoundParameters.ContainsKey("Disabled")) {
+        $_shoutOutSettings.Disabled = $Disabled
     }
 
 }
