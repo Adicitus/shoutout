@@ -104,6 +104,14 @@ function shoutOut {
             }
 
             "ErrorRecord" {
+                if ($null -ne $message.Exception) {
+                    shoutOut $message.Exception
+                }
+
+                if ($null -ne $message.InnerException) {
+                    shoutOut $message.InnerException
+                }
+
                 $m = $message
                 $Message = $m.Exception, $m.CategoryInfo, $m.InvocationInfo, $m.ScriptStackTrace | Out-string | % Split "`n`r" | ? { $_ }
                 $Message = $Message | Out-String | % TrimEnd "`n`r"
