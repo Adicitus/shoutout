@@ -1,0 +1,10 @@
+@(
+    "Clear-ShoutOutRedirect"
+    "Get-ShoutOutConfig"
+    "Get-ShoutOutDefaultLog"
+    "Get-ShoutOUtRedirect"
+    "Set-ShoutOutConfig"
+    "Set-ShoutOutDefaultLog"
+    "Set-ShoutOutRedirect"
+    "ShoutOut"
+)
