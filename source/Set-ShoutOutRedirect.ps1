@@ -1,9 +1,10 @@
 function Set-ShoutOutRedirect {
     [CmdletBinding()]
     param(
-        [parameter(Mandatory=$true, Position=1)][string]$msgType,
-        [Parameter(ParameterSetName="StringPath", Mandatory=$true, Position=2)][string]$LogFile,
-        [Parameter(ParameterSetName="Scriptblock", Mandatory=$true, Position=2)][scriptblock]$LogHandler
+        [parameter(Mandatory=$true, Position=1, HelpMessage="Message type to redirect.")][string]$MsgType,
+        [Parameter(ParameterSetName="FilePath", ValueFromPipeline=$true, Mandatory=$true, Position=2, HelpMessage="Path to log file.")][string]$LogFilePath,
+        [Parameter(ParameterSetName="FileInfo", ValueFromPipeline=$true, Mandatory=$true, Position=2, HelpMessage="FileInfo object.")][System.IO.FileInfo]$LogFile,
+        [Parameter(ParameterSetName="Scriptblock", ValueFromPipeline=$true, Mandatory=$true, Position=2, HelpMessage="ScriptBlock to use as log handler.")][scriptblock]$LogHandler
     )
 
 
@@ -18,14 +19,24 @@ function Set-ShoutOutRedirect {
             $log = $LogHandler
             break
         }
-    "StringPath" {
+    "FileInfo" {
             try {
-                _ensureShoutOutLogFile $LogFile $msgType | Out-Null
+                _ensureShoutOutLogFile $LogFile.FullName $msgType | Out-Null
+                $_shoutOutSettings.DefaultLog = $LogFile.FullName
             } catch {
                 return $_
             }
 
-            $log = $LogFile
+            $log = $LogFile.FullName
+        }
+    "FilePath" {
+            try {
+                _ensureShoutOutLogFile $LogFilePath $msgType | Out-Null
+            } catch {
+                return $_
+            }
+
+            $log = $LogFilePath
         }
     }
 
@@ -33,7 +44,8 @@ function Set-ShoutOutRedirect {
     if ($_ShoutOutSettings.LogFileRedirection.ContainsKey($msgType)) {
         $oldLog = $_ShoutOutSettings.LogFileRedirection[$msgType]
     }
-    "Redirecting messages of type '{0}' to '{1}'." -f $msgType, ($log | Out-String) | shoutOut -MsgType $msgType
+    "Redirecting messages of type '{0}' to '{1}'." -f $msgType, $log | shoutOut -MsgType Info
     $_ShoutOutSettings.LogFileRedirection[$msgType] = $log
-    "Messages of type '{0}' have been redirected to '{1}'." -f $msgType, $log | shoutOut -MsgType $msgType
+    "Messages of type '{0}' have been redirected to '{1}'." -f $msgType, $log | shoutOut -MsgType Info
+    "Previous log: '{1}'." -f $msgType, $oldLog | shoutOut -MsgType Info
 }

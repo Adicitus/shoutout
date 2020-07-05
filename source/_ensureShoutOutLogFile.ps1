@@ -5,7 +5,6 @@ function _ensureShoutOutLogFile {
     )
 
     if (!(Test-Path $logFile -PathType Leaf)) {
-        $logDir = Split-Path $logFile -Parent
         try {
             return new-Item $logFile -ItemType File -Force -ErrorAction Stop
         } catch {
