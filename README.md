@@ -19,6 +19,11 @@ The fields recorded by ShoutOut are:
 <Msgtype>|<COMPUTERNAME>|<PID>|[<Stack depth>]<scriptfile>:<line number>|<date>-<time>|<datatype of the message>|<message>
 ````
 
+## Build instructions
+This repository is in Module Project format, all scripts and assets that are to be included in the module are located under the "source directory".
+
+Use the PSBuildModule (source: https://github.com/Adicitus/ps-build-module) module to produce a module from the project files.
+
 ## Commands
 #### Clear-ShoutOutRedirect $MsgType
 Removes all logger redirections for the given $MsgType, all messages will be passed to the default logger.
