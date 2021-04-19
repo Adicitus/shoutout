@@ -5,7 +5,7 @@ function Set-ShoutOutConfig {
         [Parameter(HelpMessage="Default log handler to use for Messages Types without redirection.")]
         [Alias("LogFile")]
         $Log,
-        [Parameter("Enable/Disable Context logging.")]
+        [Parameter(HelpMessage="Enable/Disable Context logging.")]
         [Alias("LogContext")]
         [boolean]$EnableContextLogging,
         [Parameter(HelpMessage="Disable/Enable ShoutOut.")]
