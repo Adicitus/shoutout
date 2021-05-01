@@ -1,1 +1,1 @@
-"Joakim Olsson <joakimolsson1024@gmail.com>."
+"Joakim Olsson <joakim.olsson@adicitus.cloud>."
