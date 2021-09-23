@@ -170,7 +170,7 @@ function shoutOut {
 
         $createRecord = {
             param($m)
-            "{0}|{1}|{2}|{3}|{4:yyyyMMdd-HH:mm:ss}|{5}|{6}" -f $MsgType, $env:COMPUTERNAME, $pid, $parentContext, [datetime]::Now, $msgObjectTypeName, $m
+            "{0}|{1}|{2}|{3}|{4}|{5}|{6}" -f $MsgType, $env:COMPUTERNAME, $pid, $parentContext, [datetime]::Now.toString('o'), $msgObjectTypeName, $m
         }
 
         $record = . $createRecord $Message
