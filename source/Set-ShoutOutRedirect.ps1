@@ -7,45 +7,30 @@ function Set-ShoutOutRedirect {
         [Parameter(ParameterSetName="Scriptblock", ValueFromPipeline=$true, Mandatory=$true, Position=2, HelpMessage="ScriptBlock to use as log handler.")][scriptblock]$LogHandler
     )
 
-
-    $log = $null
     switch ($PSCmdlet.ParameterSetName) {
-    "Scriptblock" {
-            try {
-                _ensureshoutOutLogHandler $LogHandler $msgType | Out-Null
-            } catch {
-                return $_
-            }
-            $log = $LogHandler
-            break
-        }
-    "FileInfo" {
+        "FileInfo" {
             try {
                 _ensureShoutOutLogFile $LogFile.FullName $msgType | Out-Null
-                $_shoutOutSettings.DefaultLog = $LogFile.FullName
+                $LogHandler = _buildBasicFileLogger $LogFile.FullName
             } catch {
                 return $_
             }
 
             $log = $LogFile.FullName
         }
-    "FilePath" {
+        "FilePath" {
             try {
                 _ensureShoutOutLogFile $LogFilePath $msgType | Out-Null
+                $LogHandler = _buildBasicFileLogger $LogFilePath
             } catch {
                 return $_
             }
-
-            $log = $LogFilePath
         }
     }
 
-    $oldLog = $_ShoutOutSettings.DefaultLog
-    if ($_ShoutOutSettings.LogFileRedirection.ContainsKey($msgType)) {
-        $oldLog = $_ShoutOutSettings.LogFileRedirection[$msgType]
+    try {
+        $_ShoutOutSettings.LogFileRedirection[$msgType] = _ensureshoutOutLogHandler $LogHandler $MsgType
+    } catch {
+        return $_
     }
-    "Redirecting messages of type '{0}' to '{1}'." -f $msgType, $log | shoutOut -MsgType Info
-    $_ShoutOutSettings.LogFileRedirection[$msgType] = $log
-    "Messages of type '{0}' have been redirected to '{1}'." -f $msgType, $log | shoutOut -MsgType Info
-    "Previous log: '{1}'." -f $msgType, $oldLog | shoutOut -MsgType Info
 }

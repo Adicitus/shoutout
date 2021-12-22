@@ -9,7 +9,7 @@ function Set-ShoutOutDefaultLog {
         "LogFilePath" {
             try {
                 _ensureShoutOutLogFile $LogFilePath -ErrorAction Stop | Out-Null
-                $_shoutOutSettings.DefaultLog = $LogFilePath
+                $LogHandler = _buildBasicFileLogger $LogFilePath
             } catch {
                 return $_
             }
@@ -17,19 +17,17 @@ function Set-ShoutOutDefaultLog {
         "LogFile" {
             try {
                 _ensureShoutOutLogFile $LogFile.FullName -ErrorAction Stop | Out-Null
-                $_shoutOutSettings.DefaultLog = $LogFile.FullName
+                $LogHandler = _buildBasicFileLogger $LogFile.FullName
             } catch {
                 return $_
             }
         }
-        "LogHandler" {
-            try {
-                _ensureshoutOutLogHandler $LogHandler -ErrorAction Stop | Out-Null
-                $_shoutOutSettings.DefaultLog = $LogHandler
-            } catch {
-                return $_
-            }
-        }
+    }
+
+    try {
+        $_shoutOutSettings.DefaultLog = _ensureshoutOutLogHandler $LogHandler -ErrorAction Stop
+    } catch {
+        return $_
     }
     
 }
