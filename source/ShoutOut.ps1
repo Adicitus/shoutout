@@ -15,22 +15,44 @@ Set-ShoutOutDefaultLog, and Set-ShotOutRedirect functions.
 
 #>
 function shoutOut {
+    [CmdletBinding()]
 	param(
-        [parameter(Mandatory=$false,  position=1, ValueFromPipeline=$true)] [Object]$Message,
+        [parameter(Mandatory=$false,  position=1, ValueFromPipeline=$true, ParameterSetName="Message")]
+        [Object]$Message,
         [Alias("ForegroundColor")]
 		[parameter(Mandatory=$false, position=2)][String]$MsgType=$null,
 		[parameter(Mandatory=$false, position=3)]$Log=$null,
 		[parameter(Mandatory=$false, position=4)][Int32]$ContextLevel=1, # The number of levels to proceed up the call
                                                                          # stack when reporting the calling script.
-        [parameter(Mandatory=$false)] [bool] $LogContext = (
-            !$_ShoutOutSettings.ContainsKey("LogContext") -or ($_ShoutOutSettings.ContainsKey("LogContext") -and $_ShoutOutSettings.LogContext)
-        ),
+        [parameter(Mandatory=$false)] [bool] $LogContext=$true,
         [parameter(Mandatory=$false)] [Switch] $NoNewline,
         [parameter(Mandatory=$false)] [Switch] $Quiet
 	)
     
+    begin {
+        # Preprocessing of all variables that are not message-specific
+        $defaultHandler = { param($msg, $logFile) $msg | Out-File $Log -Encoding utf8 -Append }
+
+        $settings = $_ShoutOutSettings
+
+        # If shoutOut is disabled, return to caller.
+        if ($settings.ContainsKey("Disabled") -and ($settings.Disabled)) {
+            Write-Debug "Call to Shoutout, but Shoutout is disabled. Turn back on with 'Set-ShoutOutConfig -Disabled `$false'."
+            return
+        }
+
+        <# Applying global variables #>
+        
+        if (!$Log -and $settings.containsKey("DefaultLog")) {
+            $Log = $settings.DefaultLog
+        }
+
+        if (!$PSBoundParameters.ContainsKey('LogContext') -and $_ShoutOutSettings.ContainsKey("LogContext")) {
+            $LogContext = $_ShoutOutSettings.LogContext
+        }
+    }
+
     process {
-        $defaultLogHandler = { param($msg) $msg | Out-File $Log -Encoding utf8 -Append }
 
         $msgObjectType = if ($null -ne $Message) {
             $Message.GetType()
@@ -57,32 +79,22 @@ function shoutOut {
                     if ([System.Exception].IsAssignableFrom($msgObjectType)) {
                         $MsgType = "Exception"
                     } else {
-                        $MsgType = "Info"
+                        $MsgType = $script:_ShoutOutSettings.DefaultMsgType
                     }
                 }
             }
         }
 
-        # Apply global settings.
-        if ( ( $settingsV = Get-Variable "_ShoutOutSettings" ) -and ($settingsV.Value -is [hashtable]) ) {
-            $settings = $settingsV.Value
-
-            if ($settings.ContainsKey("Disabled") -and ($settings.Disabled)) {
-                Write-Debug "Call to Shoutout, but Shoutout is disabled. Turn back on with 'Set-ShoutOutConfig -Disabled `$false'."
-                return
-            }
-
-            if (!$MsgType -and $settings.containsKey("DefaultMsgType")) { $MsgType = $settings.DefaultMsgType }
-            if (!$Log -and $settings.containsKey("DefaultLog")) { $Log = $settings.DefaultLog }
-            if ($settings.LogFileRedirection.ContainsKey($MsgType)) { $Log = $settings.LogFileRedirection[$MsgType] }
-            
-            if ($settings.containsKey("MsgStyles") -and ($settings.MsgStyles -is [hashtable]) -and $settings.MsgStyles.containsKey($MsgType)) {
-                $msgStyle = $settings.MsgStyles[$MsgType]
-            }
+        if ($settings.LogFileRedirection.ContainsKey($MsgType)) {
+            $Log = $settings.LogFileRedirection[$MsgType]
         }
 
         # Hard-coded defaults just in case.
-        if (!$Log) { $Log = ".\setup.log" }
+        if (!$Log) { $Log = ".\shoutout.log" }
+
+        if ($settings.containsKey("MsgStyles") -and ($settings.MsgStyles -is [hashtable]) -and $settings.MsgStyles.containsKey($MsgType)) {
+            $msgStyle = $settings.MsgStyles[$MsgType]
+        }
         
         if (!$msgStyle) {
             if ($MsgType -in [enum]::GetNames([System.ConsoleColor])) {
@@ -113,12 +125,12 @@ function shoutOut {
                 }
 
                 $m = $message
-                $Message = $m.Exception, $m.CategoryInfo, $m.InvocationInfo, $m.ScriptStackTrace | Out-string | % Split "`n`r" | ? { $_ }
-                $Message = $Message | Out-String | % TrimEnd "`n`r"
+                $Message = $m.Exception, $m.CategoryInfo, $m.InvocationInfo, $m.ScriptStackTrace | Out-string | ForEach-Object Split "`n`r" | Where-Object { $_ }
+                $Message = $Message | Out-String | ForEach-Object TrimEnd "`n`r"
             }
 
             default {
-                $message = $Message | Out-String | % TrimEnd "`n`r"
+                $message = $Message | Out-String | ForEach-Object TrimEnd "`n`r"
             }
         }
 
@@ -134,6 +146,7 @@ function shoutOut {
             Write-Host @p
         }
         
+        # Calculate parent/calling context
         $parentContext = if ($LogContext) {
             $cs = Get-PSCallStack
             $csd = @($cs).Length
@@ -183,13 +196,13 @@ function shoutOut {
                 $errorMsgRecord2 = . $createRecord "The following is the record that would have been written:"
                 $Log = "{0}\shoutOut.error.{1}.{2}.{3:yyyyMMddHHmmss}.log" -f $env:APPDATA, $env:COMPUTERNAME, $pid, [datetime]::Now
                 $errorRecord = . $createRecord ($_ | Out-String)
-                . $defaultLogHandler $errorMsgRecord1
-                . $defaultLogHandler $errorRecord
-                . $defaultLogHandler $errorMsgRecord2
-                . $defaultLogHandler $record
+                . $defaultHandler $errorMsgRecord1
+                . $defaultHandler $errorRecord
+                . $defaultHandler $errorMsgRecord2
+                . $defaultHandler $record
             }
         } else {
-            . $defaultLogHandler $record
+            . $defaultHandler $record
         }
         
     }
