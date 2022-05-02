@@ -54,22 +54,27 @@ function shoutOut {
 
     process {
 
+        $fields = @{
+            Computer    = $env:COMPUTERNAME
+            LogTime     = [datetime]::Now
+            PID         = $pid
+        }
+
         $msgObjectType = if ($null -ne $Message) {
             $Message.GetType()
         } else {
             $null
         }
 
-        $msgObjectTypeName = if ($null -ne $msgObjectType) {
+        $fields.ObjectType = if ($null -ne $msgObjectType) {
             $msgObjectType.Name
         } else {
             "NULL"
         }
-
         
         if ( (-not $PSBoundParameters.ContainsKey("MsgType")) -or ($null -eq $PSBoundParameters["MsgType"]) ) {
             
-            switch ($msgObjectTypeName) {
+            switch ($fields.ObjectType) {
 
                 "ErrorRecord" {
                     $MsgType = "Error"
@@ -85,27 +90,17 @@ function shoutOut {
             }
         }
 
-        if ($settings.LogFileRedirection.ContainsKey($MsgType)) {
-            $Log = $settings.LogFileRedirection[$MsgType]
+        $fields.MessageType = $MsgType
+
+        if ($settings.LogFileRedirection.ContainsKey($fields.MessageType)) {
+            $Log = $settings.LogFileRedirection[$fields.MessageType]
         }
 
         # Hard-coded defaults just in case.
         if (!$Log) { $Log = ".\shoutout.log" }
-
-        if ($settings.containsKey("MsgStyles") -and ($settings.MsgStyles -is [hashtable]) -and $settings.MsgStyles.containsKey($MsgType)) {
-            $msgStyle = $settings.MsgStyles[$MsgType]
-        }
-        
-        if (!$msgStyle) {
-            if ($MsgType -in [enum]::GetNames([System.ConsoleColor])) {
-                $msgStyle = @{ ForegroundColor=$MsgType }
-            } else {
-                $msgStyle = @{ ForegroundColor="White" }
-            }
-        }
         
         # Apply formatting to make output more readable.
-        switch ($msgObjectTypeName) {
+        switch ($fields.ObjectType) {
 
             "String" {
                 # No transformation necessary.
@@ -134,10 +129,25 @@ function shoutOut {
             }
         }
 
+        $fields.Message = $Message
+
         # Print to console if necessary
 	    if ([Environment]::UserInteractive -and !$Quiet) {
+
+            if ($settings.containsKey("MsgStyles") -and ($settings.MsgStyles -is [hashtable]) -and $settings.MsgStyles.containsKey($fields.MessageType)) {
+                $msgStyle = $settings.MsgStyles[$fields.MessageType]
+            }
+            
+            if (!$msgStyle) {
+                if ($fields.MessageType -in [enum]::GetNames([System.ConsoleColor])) {
+                    $msgStyle = @{ ForegroundColor=$fields.MessageType }
+                } else {
+                    $msgStyle = @{ ForegroundColor="White" }
+                }
+            }
+
             $p = @{
-                Object = $Message
+                Object = $fields.Message
                 NoNewline = $NoNewline
             }
             if ($msgStyle.ForegroundColor) { $p.ForegroundColor = $msgStyle.ForegroundColor }
@@ -147,7 +157,7 @@ function shoutOut {
         }
         
         # Calculate parent/calling context
-        $parentContext = if ($LogContext) {
+        $fields.Caller = if ($LogContext) {
             $cs = Get-PSCallStack
             $csd = @($cs).Length
             # CallStack Depth, should always be greater than or equal to 2. 1 would indicate that we
@@ -182,11 +192,20 @@ function shoutOut {
         }
 
         $createRecord = {
-            param($m)
-            "{0}|{1}|{2}|{3}|{4}|{5}|{6}" -f $MsgType, $env:COMPUTERNAME, $pid, $parentContext, [datetime]::Now.toString('o'), $msgObjectTypeName, $m
+            param($fields)
+
+            "{0}|{1}|{2}|{3}|{4}|{5}|{6}" -f @( 
+                $fields.MessageType,
+                $fields.Computer,
+                $fields.PID,
+                $fields.Caller,
+                $fields.LogTime.toString('o'),
+                $fields.ObjectType,
+                $fields.Message
+            )
         }
 
-        $record = . $createRecord $Message
+        $record = & $createRecord $fields
 
         if ($log -is [scriptblock])  {
             try {
