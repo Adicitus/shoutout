@@ -30,8 +30,6 @@ function shoutOut {
 	)
     
     begin {
-        # Preprocessing of all variables that are not message-specific
-        $defaultHandler = { param($msg, $logFile) $msg | Out-File $Log -Encoding utf8 -Append }
 
         $settings = $_ShoutOutSettings
 
@@ -54,7 +52,8 @@ function shoutOut {
 
     process {
 
-        $fields = @{
+        $details = @{
+            Message    = $Message
             Computer    = $env:COMPUTERNAME
             LogTime     = [datetime]::Now
             PID         = $pid
@@ -66,7 +65,7 @@ function shoutOut {
             $null
         }
 
-        $fields.ObjectType = if ($null -ne $msgObjectType) {
+        $details.ObjectType = if ($null -ne $msgObjectType) {
             $msgObjectType.Name
         } else {
             "NULL"
@@ -74,7 +73,7 @@ function shoutOut {
         
         if ( (-not $PSBoundParameters.ContainsKey("MsgType")) -or ($null -eq $PSBoundParameters["MsgType"]) ) {
             
-            switch ($fields.ObjectType) {
+            switch ($details.ObjectType) {
 
                 "ErrorRecord" {
                     $MsgType = "Error"
@@ -90,64 +89,80 @@ function shoutOut {
             }
         }
 
-        $fields.MessageType = $MsgType
+        $details.MessageType = $MsgType
 
-        if ($settings.LogFileRedirection.ContainsKey($fields.MessageType)) {
-            $Log = $settings.LogFileRedirection[$fields.MessageType]
+        if ($settings.LogFileRedirection.ContainsKey($details.MessageType)) {
+            $Log = $settings.LogFileRedirection[$details.MessageType]
         }
 
         # Hard-coded defaults just in case.
-        if (!$Log) { $Log = ".\shoutout.log" }
+        if (!$Log) {
+            $Log = ".\shoutout.log"
+        }
+        
+        # If the log is  a string, assume that it is a file path:
+        $logHandler = Switch ($log.GetType().NAme) {
+            String {
+                _buildBasicFileLogger $Log
+            }
+            ScriptBlock {
+                $Log
+            }
+        }
+
+        $messageString = $null
         
         # Apply formatting to make output more readable.
-        switch ($fields.ObjectType) {
+        switch ($details.ObjectType) {
 
             "String" {
                 # No transformation necessary.
+                $messageString = $details.Message
             }
 
             "NULL" {
                 # No Transformation necessary.
+                $messageString = ""
             }
 
             "ErrorRecord" {
-                if ($null -ne $message.Exception) {
-                    shoutOut $message.Exception
+                if ($null -ne $details.Message.Exception) {
+                    shoutOut $details.Message.Exception
                 }
 
-                if ($null -ne $message.InnerException) {
-                    shoutOut $message.InnerException
+                if ($null -ne $details.Message.InnerException) {
+                    shoutOut $details.Message.InnerException
                 }
 
-                $m = $message
-                $Message = $m.Exception, $m.CategoryInfo, $m.InvocationInfo, $m.ScriptStackTrace | Out-string | ForEach-Object Split "`n`r" | Where-Object { $_ }
-                $Message = $Message | Out-String | ForEach-Object TrimEnd "`n`r"
+                $m = $details.Message
+                $MessageString = $m.Exception, $m.CategoryInfo, $m.InvocationInfo, $m.ScriptStackTrace | Out-string | ForEach-Object Split "`n`r" | Where-Object { $_ }
+                $MessageString = $MessageString | Out-String | ForEach-Object TrimEnd "`n`r"
             }
 
             default {
-                $message = $Message | Out-String | ForEach-Object TrimEnd "`n`r"
+                $messageString = $Message | Out-String | ForEach-Object TrimEnd "`n`r"
             }
         }
 
-        $fields.Message = $Message
+        $details.MessageString = $MessageString
 
         # Print to console if necessary
 	    if ([Environment]::UserInteractive -and !$Quiet) {
 
-            if ($settings.containsKey("MsgStyles") -and ($settings.MsgStyles -is [hashtable]) -and $settings.MsgStyles.containsKey($fields.MessageType)) {
-                $msgStyle = $settings.MsgStyles[$fields.MessageType]
+            if ($settings.containsKey("MsgStyles") -and ($settings.MsgStyles -is [hashtable]) -and $settings.MsgStyles.containsKey($details.MessageType)) {
+                $msgStyle = $settings.MsgStyles[$details.MessageType]
             }
             
             if (!$msgStyle) {
-                if ($fields.MessageType -in [enum]::GetNames([System.ConsoleColor])) {
-                    $msgStyle = @{ ForegroundColor=$fields.MessageType }
+                if ($details.MessageType -in [enum]::GetNames([System.ConsoleColor])) {
+                    $msgStyle = @{ ForegroundColor=$details.MessageType }
                 } else {
                     $msgStyle = @{ ForegroundColor="White" }
                 }
             }
 
             $p = @{
-                Object = $fields.Message
+                Object = $details.MessageString
                 NoNewline = $NoNewline
             }
             if ($msgStyle.ForegroundColor) { $p.ForegroundColor = $msgStyle.ForegroundColor }
@@ -157,7 +172,7 @@ function shoutOut {
         }
         
         # Calculate parent/calling context
-        $fields.Caller = if ($LogContext) {
+        $details.Caller = if ($LogContext) {
             $cs = Get-PSCallStack
             $csd = @($cs).Length
             # CallStack Depth, should always be greater than or equal to 2. 1 would indicate that we
@@ -192,36 +207,44 @@ function shoutOut {
         }
 
         $createRecord = {
-            param($fields)
+            param($details)
 
             "{0}|{1}|{2}|{3}|{4}|{5}|{6}" -f @( 
-                $fields.MessageType,
-                $fields.Computer,
-                $fields.PID,
-                $fields.Caller,
-                $fields.LogTime.toString('o'),
-                $fields.ObjectType,
-                $fields.Message
+                $details.MessageType,
+                $details.Computer,
+                $details.PID,
+                $details.Caller,
+                $details.LogTime.toString('o'),
+                $details.ObjectType,
+                $details.MessageString
             )
         }
 
-        $record = & $createRecord $fields
+        try {
 
-        if ($log -is [scriptblock])  {
-            try {
-                . $Log -Message $record
-            } catch {
-                $errorMsgRecord1 = . $createRecord ("An error occurred while trying to log a message to '{0}'" -f ( $Log | Out-String))
-                $errorMsgRecord2 = . $createRecord "The following is the record that would have been written:"
-                $Log = "{0}\shoutOut.error.{1}.{2}.{3:yyyyMMddHHmmss}.log" -f $env:APPDATA, $env:COMPUTERNAME, $pid, [datetime]::Now
-                $errorRecord = . $createRecord ($_ | Out-String)
-                . $defaultHandler $errorMsgRecord1
-                . $defaultHandler $errorRecord
-                . $defaultHandler $errorMsgRecord2
-                . $defaultHandler $record
+            $handlerArgs = @{}
+
+            $LogHandler.Ast.ParamBlock.Parameters | ForEach-Object {
+                $n = $_.Name.Extent.Text.TrimStart('$')
+                switch ($n) {
+                    Message {
+                        $handlerArgs.$n = $details.Message
+                    }
+                    Record {
+                        $handlerArgs.$n = & $createRecord $details
+                    }
+                    Details {
+                        $handlerArgs.$n = $details
+                    }
+                }
             }
-        } else {
-            . $defaultHandler $record
+
+            & $LogHandler @handlerArgs
+
+        } catch {
+            "Failed to log: {0}" -f ($handlerArgs | Out-String) | Write-Error
+            "using log handler: {0}" -f $logHandler | Write-Error
+            $_ | Out-string | Write-Error
         }
         
     }

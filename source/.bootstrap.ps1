@@ -4,13 +4,13 @@ function _buildBasicFileLogger {
     )
 
     return {
-        param($message)
+        param($Record)
 
         if (-not (Test-Path $FilePath -PathType Leaf)) {
             New-Item -Path $FilePath -ItemType File -Force -ErrorAction Stop | Out-Null
         }
 
-        $message | Out-File $FilePath -Encoding utf8 -Append -Force
+        $Record | Out-File $FilePath -Encoding utf8 -Append -Force
     }.GetNewClosure()
 }
 
