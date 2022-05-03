@@ -1,5 +1,3 @@
-[WIP]
-
 # shoutout
 Powershell module for the ShoutOut, a Powershell based logger.
 
@@ -8,7 +6,7 @@ The "ShoutOut" command at it's most basic takes a message. That message to be di
 Each message can have an associated Meesage Type ("MsgType", defaults to "Info"), that will be included in the log record and may be used to determine
 how the message is displayed in the console and which logger should handle the message.
 
-Messages are logged as records like this:
+By default messages are logged as Records like this:
 ````
 Info|STOICAL01|4564|[3]C:\crm-scheduler\run.ps1:39|20200623-16:30:01|String|this is a message.
 ````
@@ -16,13 +14,24 @@ Where each field is separated by a "|".
 
 The fields recorded by ShoutOut are:
 ````
-<Msgtype>|<COMPUTERNAME>|<PID>|[<Stack depth>]<scriptfile>:<line number>|<date>-<time>|<datatype of the message>|<message>
+<Msgtype>|<COMPUTERNAME>|<PID>|[<Stack depth>]<scriptfile>:<line number>|<datetime-parsable string>|<datatype of the message>|<message>
 ````
+
+Hovever custom log handlers can be defined by specifying LogHandler on Set-ShoutOUtDefaultLog and Set-ShoutOutRedirect.
+
+Log handlers allow you to perform custom manipulation and storage of messages.
 
 ## Build instructions
 This repository is in Module Project format, all scripts and assets that are to be included in the module are located under the "source directory".
 
 Use the PSBuildModule (source: https://github.com/Adicitus/ps-build-module) module to produce a module from the project files.
+
+You can also install ShoutOut from the Powershell Gallery ([https://www.powershellgallery.com/packages/ShoutOut](https://www.powershellgallery.com/packages/ShoutOut)):
+
+```
+Install-Module ShoutOut
+```
+
 
 ## Commands
 #### Clear-ShoutOutRedirect $MsgType
@@ -80,7 +89,22 @@ A scriptblock to use as handler should look something like this:
 }
 ````
 
-The record of the message will be passed to handler as a string.
+In this case the $Message variable will hold the original object passed as message to shoutOut.
+
+The following parameters are recognized by shoutOut
+  - Message: The original object
+  - Details: A hashtable containing the follwing keys:
+    - Message: The original message.
+    - MessageString: A string representation of Message (this is what shoutOut writes to host).
+    - MessageType: The Message type used.
+    - PID: The process ID of the originating process.
+    - Computer: The name of the originating computer.
+    - LogTime: Datetime indicating when ShoutOut was called.
+    - Caller: String indicating where the call originated.
+    - ObjectType: String name for the object type of message, or 'NULL' if message is $null.
+  - Record: See the description in the introduction.
+
+You can use any combination of these parameters, but at least one must be specified.
 
 ## Configuration
 The following settings are available to modify the behavior of ShoutOut.
