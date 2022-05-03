@@ -1,4 +1,4 @@
-function _ensureshoutOutLogHandler {
+function _validateShoutOutLogHandler {
     param(
         [scriptblock]$LogHandler,
         [string]$msgType = "*"

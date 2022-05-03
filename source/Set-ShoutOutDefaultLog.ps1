@@ -25,7 +25,7 @@ function Set-ShoutOutDefaultLog {
     }
 
     try {
-        $_shoutOutSettings.DefaultLog = _ensureshoutOutLogHandler $LogHandler -ErrorAction Stop
+        $_shoutOutSettings.DefaultLog = _validateShoutOutLogHandler $LogHandler -ErrorAction Stop
     } catch {
         return $_
     }

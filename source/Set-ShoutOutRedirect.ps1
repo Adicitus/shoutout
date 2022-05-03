@@ -29,7 +29,7 @@ function Set-ShoutOutRedirect {
     }
 
     try {
-        $_ShoutOutSettings.LogFileRedirection[$msgType] = _ensureshoutOutLogHandler $LogHandler $MsgType
+        $_ShoutOutSettings.LogFileRedirection[$msgType] = _validateShoutOutLogHandler $LogHandler $MsgType
     } catch {
         return $_
     }
