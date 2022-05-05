@@ -57,6 +57,7 @@ function shoutOut {
             Computer    = $env:COMPUTERNAME
             LogTime     = [datetime]::Now
             PID         = $pid
+            CallStack   = Get-PSCallStack
         }
 
         $msgObjectType = if ($null -ne $Message) {
@@ -173,35 +174,15 @@ function shoutOut {
         
         # Calculate parent/calling context
         $details.Caller = if ($LogContext) {
-            $cs = Get-PSCallStack
-            $csd = @($cs).Length
+
             # CallStack Depth, should always be greater than or equal to 2. 1 would indicate that we
             # are running the directly on the command line, but since we are inside the shoutOut
             # function there should always be at least one level to the callstack in addition to the
             # calling context.
-            switch ($csd) {
-                2 { "[{0}]<commandline>" -f $csd }
-                
-                default {
-                    $parentCall = $cs[$ContextLevel]
-                    if ($parentCall.ScriptName) {
-                        "[{0}]{1}:{2}" -f $csd, $parentCall.ScriptName,$parentCall.ScriptLineNumber
-                    } else {
-                        for($i = $ContextLevel; $i -lt $cs.Length; $i++) {
-                            $level = $cs[$i]
-                            if ($level.ScriptName) {
-                                break;
-                            }
-                        }
-
-                        if ($level.ScriptName) {
-                            "[{0}]{1}:{2}\<scriptblock>" -f $csd, $level.ScriptName,$level.ScriptLineNumber
-                        } else {
-                            "[{0}]<commandline>\<scriptblock>" -f $csd
-                        }
-                    }
-                }
-            }
+            $cs = Get-PSCallStack
+            $cl = if ($cs.Length -gt $ContextLevel) { $ContextLevel } else { $cs.Length - 1 }
+            $l  = if ($null -eq $cs[$cl].ScriptName) { "<No file>" } else { '{0}:{1}' -f $cs[$cl].ScriptName, $cs[$cl].ScriptLineNumber }
+            "[{0}]{1}" -f ($cs.length - $cl), $l
         } else {
             "[context logging disabled]"
         }

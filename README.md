@@ -14,8 +14,20 @@ Where each field is separated by a "|".
 
 The fields recorded by ShoutOut are:
 ````
-<Msgtype>|<COMPUTERNAME>|<PID>|[<Stack depth>]<scriptfile>:<line number>|<datetime-parsable string>|<datatype of the message>|<message>
+<F1:Msgtype>|<F2:COMPUTERNAME>|<F3:PID>|[<F4a:Stack depth>]<F4b:scriptfile>:<F4c:line number>|<F5:time of the call>|<F6:datatype of the message object>|<F7:message>
 ````
+
+Where:
+  - F1: MsgType, a string indicating the type of message being logged.
+  - F2: Computername, The computer where the message was logged.
+  - F3: PID, ID of the process that logged the message.
+  - F4: Context
+    - a: Stack depth at which the call to shoutOut was made.
+    - b: The file where the call to shoutout originated, or '<nofile>' if the call didn't originate from a script file.
+    - c: The line in the file where the call originated.
+  - F5: Round-trip formatted time when the call to shoutOut occurred. See [https://docs.microsoft.com/en-us/dotnet/standard/base-types/standard-date-and-time-format-strings#the-round-trip-o-o-format-specifier](https://docs.microsoft.com/en-us/dotnet/standard/base-types/standard-date-and-time-format-strings#the-round-trip-o-o-format-specifier).
+  - F6: Datatype name of the message object.
+  - F7: The message object converted to a string. ErrorRecords will be expanded include more details than standard.
 
 Hovever custom log handlers can be defined by specifying LogHandler on Set-ShoutOUtDefaultLog and Set-ShoutOutRedirect.
 
@@ -100,7 +112,8 @@ The following parameters are recognized by shoutOut
     - PID: The process ID of the originating process.
     - Computer: The name of the originating computer.
     - LogTime: Datetime indicating when ShoutOut was called.
-    - Caller: String indicating where the call originated.
+    - Caller: String indicating where the call originated. This is the string that would be used to indicate context (field 4) the corresponding record. Affected by the $ContextLevel parameter (most recent $ContextLevel entries removed from the callstack).
+    - CallStack: The callstack at the point that shoutOut was called. This is affected by the $ContextLevel parameter (most recent $ContextLevel entries removed from the callstack).
     - ObjectType: String name for the object type of message, or 'NULL' if message is $null.
   - Record: See the description in the introduction.
 
