@@ -57,7 +57,6 @@ function shoutOut {
             Computer    = $env:COMPUTERNAME
             LogTime     = [datetime]::Now
             PID         = $pid
-            CallStack   = Get-PSCallStack
         }
 
         $msgObjectType = if ($null -ne $Message) {
@@ -175,14 +174,26 @@ function shoutOut {
         # Calculate parent/calling context
         $details.Caller = if ($LogContext) {
 
-            # CallStack Depth, should always be greater than or equal to 2. 1 would indicate that we
-            # are running the directly on the command line, but since we are inside the shoutOut
-            # function there should always be at least one level to the callstack in addition to the
-            # calling context.
+            
+            # Calculate the callstack.
+
             $cs = Get-PSCallStack
-            $cl = if ($cs.Length -gt $ContextLevel) { $ContextLevel } else { $cs.Length - 1 }
-            $l  = if ($null -eq $cs[$cl].ScriptName) { "<No file>" } else { '{0}:{1}' -f $cs[$cl].ScriptName, $cs[$cl].ScriptLineNumber }
-            "[{0}]{1}" -f ($cs.length - $cl), $l
+            # Adjust ContextLevel if it is greater than the total size of the callstack:
+            if ($cs.Length -le $ContextLevel) {
+                $ContextLevel = $cs.Length - 1
+            }
+            $cs = $cs[$ContextLevel..($cs.length - 1)]
+
+            # Record the callstack on details:
+            $details.CallStack = $cs
+
+            # Calculate caller context:
+            $l  = if ($null -eq $cs[0].ScriptName) {
+                "<No file>"
+            } else {
+                '{0}:{1}' -f $cs[0].ScriptName, $cs[0].ScriptLineNumber
+            }
+            "[{0}]{1}" -f ($cs.length), $l
         } else {
             "[context logging disabled]"
         }
