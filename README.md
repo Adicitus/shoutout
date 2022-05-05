@@ -112,8 +112,8 @@ The following parameters are recognized by shoutOut
     - PID: The process ID of the originating process.
     - Computer: The name of the originating computer.
     - LogTime: Datetime indicating when ShoutOut was called.
-    - Caller: String indicating where the call originated. This is the string that would be used to indicate context (field 4) the corresponding record. Affected by the $ContextLevel parameter (most recent $ContextLevel entries removed from the callstack).
-    - CallStack: The callstack at the point that shoutOut was called. This is affected by the $ContextLevel parameter (most recent $ContextLevel entries removed from the callstack).
+    - Caller: String indicating where the call originated. This is the string that would be used to indicate context (field 4) the corresponding record. Affected by the $ContextLevel parameter (most recent $ContextLevel entries removed from the callstack). If $LogContext is $false, this will be the string '[Context logging disabled]'.
+    - CallStack: The callstack at the point that shoutOut was called. This is affected by the $ContextLevel parameter (most recent $ContextLevel entries removed from the callstack). If $LogContext is $false, this key will not be included.
     - ObjectType: String name for the object type of message, or 'NULL' if message is $null.
   - Record: See the description in the introduction.
 

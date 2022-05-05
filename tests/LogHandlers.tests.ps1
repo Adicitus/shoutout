@@ -23,7 +23,7 @@ Describe "Log Handler" {
             BeforeAll {
                 $MsgType = "DetailsHandler"
                 $out = @{}
-                Set-ShoutOutRedirect -LogHandler { param($Details) $out.v = $Details } -MsgType $MsgType
+                Set-ShoutOutRedirect -LogHandler { param($Details, $Record) $out.v = $Details; } -MsgType $MsgType
             }
 
             BeforeEach {
@@ -47,13 +47,37 @@ Describe "Log Handler" {
                 $out.v.Computer | Should -Be $env:COMPUTERNAME
             }
 
-            It 'ObjectType should be the type-name of message' {
+            It 'Should set ObjectType to be the type-name of message object' {
                 $out.v.ObjectType | Should -Be $srcMsg.GetType().Name
             }
 
-            It 'ObjectType should be "NULL" if the message is $null' {
-                shoutOut $null -MsgType $MsgType
+            It 'Should set ObjectType be "NULL" if the message is $null' {
+                shoutOut $null -MsgType $MsgType -Quiet
                 $out.v.ObjectType | Should -Be 'NULL'
+            }
+
+            It 'Should calculate caller if $LogContext is $true (default)' {
+                $cs = Get-PSCallStack
+                shoutOut $SrcMsg -MsgType $MsgType -Quiet
+                $callerPattern = '^\[(?<depth>[1-9]+)\](?<file>.+):(?<line>)'
+                $out.v.Caller   | Should -Match $callerPattern
+                $out.v.Caller -match $callerPattern |Out-Null
+                [int]::Parse($matches.depth)  | Should -Be $cs.Length
+                $matches.file   | Should -Be $cs[0].ScriptName
+            }
+
+            It 'Should set Caller to be "[context logging disabled]" if $LogContext is $false' {
+                shoutOut Test -LogContext $false -MsgType $MsgType -Quiet
+                $out.v.Caller | Should -Be '[context logging disabled]'
+            }
+
+            It 'Should set CallStack to be an array of CallStackFrame objects' {
+                $out.v.CallStack | Should -BeOfType [System.Management.Automation.CallStackFrame]
+            }
+
+            It 'Should set CallStack to be $null if $LogContext -eq $false.' {
+                shoutOut Test -LogContext $false -MsgType $MsgType -Quiet
+                $out.v.CallStack | Should -Be $null
             }
             
         }
@@ -63,7 +87,7 @@ Describe "Log Handler" {
                 $msgType = 'RecordHandler'
                 $out = @{}
                 Set-ShoutOutRedirect -LogHandler { param($Details, $Record)
-                    $out.v = $Record;
+                    $out.v = $Record
                     $out.d = $Details
                 } -MsgType $msgType
             }
@@ -90,10 +114,10 @@ Describe "Log Handler" {
             }
 
             It 'Fourth field should be the stack depth and caller' {
-                $out.v.split('|', 7)[3] | Should -Match '\[[0-9]+\].+'
+                $out.v.split('|', 7)[3] | Should -Match '^\[[0-9]+\](\<No File\>|.+:[1-9]+)$'
             }
 
-            It 'Fifth field should be the datetime that the message was issued' {
+            It 'Fifth field should be the date & time that the message was issued' {
                 [datetime]$out.v.split('|', 7)[4] | Should -Be $out.d.LogTime
             }
 
