@@ -31,14 +31,6 @@ $script:_ShoutOutSettings = @{
 }
 
 $defaultLogFilename = "{0}.{1}.{2:yyyyMMddHHmmss}.log" -f $env:COMPUTERNAME, $pid, [datetime]::Now
-
-$defaultLogFile = switch ((whoami).split('\')[0]) {
-    System  {
-        "{0}\Logs\shoutOut\{1}" -f $env:windir, $defaultLogFilename
-    }   
-    default {
-        "{0}\shoutOut\Logs\{1}" -f $env:APPDATA, $defaultLogFilename
-    }
-}
+$defaultLogFile     = "{0}\AppData\local\ShoutOut\{1}" -f $env:USERPROFILE, $defaultLogFilename
 
 $script:_ShoutOutSettings.DefaultLog = _buildBasicFileLogger $defaultLogFile
