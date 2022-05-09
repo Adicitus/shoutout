@@ -111,8 +111,13 @@ function shoutOut {
         }
 
         $recurseArgs = @{}
-        $PSBoundParameters.Keys | Where-Object { $_ -ne "Message" } | ForEach-Object {
+        $PSBoundParameters.Keys | Where-Object { $_ -notin "Message", "MsgType" } | ForEach-Object {
             $recurseArgs[$_] = $PSBoundParameters[$_]
+        }
+        if ($recurseArgs.ContainsKey('ContextLevel')) {
+            $recurseArgs.ContextLevel += 1
+        } else {
+            $recurseArgs.ContextLevel = 2
         }
 
         $messageString = $null
@@ -131,11 +136,7 @@ function shoutOut {
 
             "ErrorRecord" {
                 if ($null -ne $details.Message.Exception) {
-                    shoutOut -Message $details.Message.Exception @recurseArgs
-                }
-
-                if ($null -ne $details.Message.InnerException) {
-                    shoutOut -Message $details.Message.InnerException @recurseArgs
+                    shoutOut -Message $details.Message.Exception -MsgType Exception @recurseArgs
                 }
 
                 $m = $details.Message
