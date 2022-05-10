@@ -110,8 +110,17 @@ function shoutOut {
             }
         }
 
+        $recurseArgs = @{}
+        $PSBoundParameters.Keys | Where-Object { $_ -notin "Message", "MsgType" } | ForEach-Object {
+            $recurseArgs[$_] = $PSBoundParameters[$_]
+        }
+        if ($recurseArgs.ContainsKey('ContextLevel')) {
+            $recurseArgs.ContextLevel += 1
+        } else {
+            $recurseArgs.ContextLevel = 2
+        }
+
         $messageString = $null
-        
         # Apply formatting to make output more readable.
         switch ($details.ObjectType) {
 
@@ -127,20 +136,26 @@ function shoutOut {
 
             "ErrorRecord" {
                 if ($null -ne $details.Message.Exception) {
-                    shoutOut $details.Message.Exception
-                }
-
-                if ($null -ne $details.Message.InnerException) {
-                    shoutOut $details.Message.InnerException
+                    shoutOut -Message $details.Message.Exception -MsgType Exception @recurseArgs
                 }
 
                 $m = $details.Message
-                $MessageString = $m.Exception, $m.CategoryInfo, $m.InvocationInfo, $m.ScriptStackTrace | Out-string | ForEach-Object Split "`n`r" | Where-Object { $_ }
-                $MessageString = $MessageString | Out-String | ForEach-Object TrimEnd "`n`r"
+                $MessageString = 'Exception', 'CategoryInfo', 'InvocationInfo', 'ScriptStackTrace' | ForEach-Object { $m.$_ } | Out-string | ForEach-Object Split "`n`r" | Where-Object { $_ }
+                $MessageString = $MessageString -join "`n"
             }
 
             default {
-                $messageString = $Message | Out-String | ForEach-Object TrimEnd "`n`r"
+                $t = $details.Message.GetType()
+                if ([System.Exception].IsAssignableFrom($t)) {
+                    if ($null -ne $details.Message.InnerException) {
+                        shoutOut $details.Message.InnerException @recurseArgs
+                    }
+                    $m = $details.Message
+                    $MessageString = 'message', 'Source', 'Stacktrace', 'TargetSite' | ForEach-Object { $m.$_ } | Out-string | ForEach-Object Split "`n`r" | Where-Object { $_ }
+                    $MessageString = $MessageString -join "`n`r"
+                } else {
+                    $messageString = $Message | Out-String | ForEach-Object TrimEnd "`n`r"
+                }
             }
         }
 

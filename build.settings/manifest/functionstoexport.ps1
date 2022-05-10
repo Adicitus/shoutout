@@ -6,5 +6,6 @@
     "Set-ShoutOutConfig"
     "Set-ShoutOutDefaultLog"
     "Set-ShoutOutRedirect"
+    "Invoke-ShoutOut"
     "ShoutOut"
 )
