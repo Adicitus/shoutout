@@ -8,6 +8,9 @@
     Helper function to execute commands (strings or blocks) with error-handling/reporting.
 .DESCRIPTION
     Helper function to execute commands (strings or blocks) with error-handling/reporting.
+
+Invokes a command in a new context so that all output and errors can be captured and recorded by ShoutOut.
+
 If a scriptblock is passed as the operation, the function will attempt make any variables referenced by the
 scriptblock available to the scriptblock when it is resolved (using variables available in the scope that
 called Run-Operation).

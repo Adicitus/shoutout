@@ -13,20 +13,76 @@ The message is prepended with meta data about the invocation to shoutOut as:
 The default values for the parameters can be set using the Set-ShoutOutConfig,
 Set-ShoutOutDefaultLog, and Set-ShotOutRedirect functions.
 
+.PARAMETER Message
+Message object to log.
+
+.PARAMETER MessageType
+The type of message to log. By default ShoutOut is intended to handle the following types:
+ - Success: Indicating a positive outcome.
+ - Error: Indicating that the message is or is related to an Error (typically an [ErrorRecord] object). Comparable with Write-Error.
+ - Exception: Indicates that the message is or is related to an Exception.
+ - Warning: Indicates that the message relates to a non-fatal irregularity in the system.
+ - Info: Indicates that the message is purely informational. This is the standard default message type. Comparable with Write-Host.
+ - Result: Indicates that the message is related to an output value from an operation. Comparable with write output.
+
+ Each of these types have standard output color presets.
+ 
+ In practice ShoutOut will accept any given string.
+
+.PARAMETER Log
+Overrides the standard log-selection process and forces shoutout to use the provided log.
+
+If this parameter is a string it will be interpreted as the path to a file where log records
+should be written.
+
+If this is a ScriptBlock, it should have one of the accepted parameters:
+- Message
+- Details 
+- Record
+
+See the overall ShoutOut README.md for details on Log Handlers.
+
+.PARAMETER ContextLevel
+The number of steps to climb up the callstack when reporting context.
+
+0: Include the call to shoutout.
+1: Include the callstack from the call to the context where shoutout was called.
+
+Default is 1.
+
+When using a Record-type log handler the last element in the stack will be reported as the calling context.
+
+.PARAMETER LogContext
+If set to $false, no context information will be included in the log (no 'Callstack' for Details, no calling context for Record handlers).
+
+.PARAMETER NoNewLine
+Omits the newline when writing to console/host.
+
+.PARAMETER Quiet
+Disables all writing to console/host.
+
 #>
 function shoutOut {
     [CmdletBinding()]
 	param(
-        [parameter(Mandatory=$false,  position=1, ValueFromPipeline=$true, ParameterSetName="Message")]
+        [Alias('Msg')]
+        [parameter(Mandatory=$false,  position=1, ValueFromPipeline=$true, ParameterSetName="Message", HelpMessage="Message object to log")]
         [Object]$Message,
         [Alias("ForegroundColor")]
-		[parameter(Mandatory=$false, position=2)][String]$MsgType=$null,
-		[parameter(Mandatory=$false, position=3)]$Log=$null,
-		[parameter(Mandatory=$false, position=4)][Int32]$ContextLevel=1, # The number of levels to proceed up the call
-                                                                         # stack when reporting the calling script.
-        [parameter(Mandatory=$false)] [bool] $LogContext=$true,
-        [parameter(Mandatory=$false)] [Switch] $NoNewline,
-        [parameter(Mandatory=$false)] [Switch] $Quiet
+        [Alias("MsgType")]
+		[parameter(Mandatory=$false, position=2, HelpMessage="The type of message log. If this is not specified it will be calculated based on the input type and shoutout configuration.")]
+        [String]$MesssageType=$null,
+		[parameter(Mandatory=$false, position=3, HelpMessage="Path to a file or a Scriptblock to use to log the message.")]
+        $Log=$null,
+		[parameter(Mandatory=$false, position=4, HelpMessage="How many levels to remove from the callstack when reporting the caller context. 0 will include the call to ShoutOut. Default is 1")]
+        [Int32]$ContextLevel=1, # The number of levels to proceed up the call
+                                # stack when reporting the calling script.
+        [parameter(Mandatory=$false, HelpMessage="Determines if context information should be logged.")]
+        [bool] $LogContext=$true,
+        [parameter(Mandatory=$false, HelpMessage="If set, omits the newline when writing to console/host.")]
+        [Switch] $NoNewline,
+        [parameter(Mandatory=$false, HelpMessage="If set, no output will be printed to console/host.")]
+        [Switch] $Quiet
 	)
     
     begin {
