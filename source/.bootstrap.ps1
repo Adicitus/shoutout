@@ -18,7 +18,6 @@ function _buildBasicFileLogger {
 # Default Configuration:
 $script:_ShoutOutSettings = @{
     DefaultMsgType="Info"
-    LogFileRedirection=@{}
     MsgStyles=@{
         Success =       @{ ForegroundColor="Green" }
         Exception =     @{ ForegroundColor="Red"; BackgroundColor="Black" }
