@@ -57,8 +57,8 @@ function Invoke-ShoutOut {
     }
 
     if (!$LogErrorsOnly) {
-        $msg = "Running '$Operation'..."
-        $msg | shoutOut -MsgType Invocation -ContextLevel 1 @shoutOutArgs
+        $msg = "Invoke-ShoutOut: '$Operation'..."
+        $msg | shoutOut -MsgType Invocation -ContextLevel 2 @shoutOutArgs
     }
 
     $r = try {
@@ -121,22 +121,15 @@ function Invoke-ShoutOut {
             # as opposed to <[scriptblock]>.invoke().
             Invoke-Expression $__thisOperation | ForEach-Object {
                 if (!$LogErrorsOnly) {
-                    shoutOut "`t| $_" "Result" -ContextLevel 1 @shoutOutArgs
+                    shoutOut "`t| $_" "Result" -ContextLevel 2 @shoutOutArgs
                 }
                 return $_
             }
         } $Operation $variables
 
     } catch {
-        "An error occured while executing the operation:" | shoutOUt -MsgType Error -ContextLevel 1 @shoutOutArgs
-        $_ | shoutOut -MsgType Error -ContextLevel 1 @shoutOutArgs
-        <#
-        $_.Exception, $_.CategoryInfo, $_.InvocationInfo, $_.ScriptStackTrace | Out-string | ForEach-Object {
-            $_.Split("`n`r", [System.StringSplitOptions]::RemoveEmptyEntries).TrimEnd("`n`r")
-        } | ForEach-Object {
-            "`t| $_"
-        } | shoutOut -MsgType 'Error' -ContextLevel 1 @shoutOutArgs
-        #>
+        "An error occured while executing the operation:" | shoutOUt -MsgType Error -ContextLevel 2 @shoutOutArgs
+        $_ | shoutOut -MsgType Error -ContextLevel 2 @shoutOutArgs
         
         $_
     }
