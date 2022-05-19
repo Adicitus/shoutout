@@ -20,6 +20,7 @@ $script:logRegistry = @{
 $script:hashCodeAttribute = 'MyInvocation'
 
 New-Alias 'Get-ShoutOutRedirect' -Value 'Get-ShoutOutLog'
+New-Alias 'Clear-ShoutOutRedirect' -Value 'Clear-ShoutOutLog'
 
 # Setting up default logging:
 $defaultLogFilename = "{0}.{1}.{2:yyyyMMddHHmmss}.log" -f $env:COMPUTERNAME, $pid, [datetime]::Now

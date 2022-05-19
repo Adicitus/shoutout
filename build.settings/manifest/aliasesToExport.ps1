@@ -1,3 +1,4 @@
 @(
     'Get-ShoutOutRedirect'
+    'Clear-ShoutOutRedirect'
 )

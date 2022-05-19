@@ -1,5 +1,5 @@
 @(
-    "Clear-ShoutOutRedirect"
+    "Clear-ShoutOutLog"
     "Get-ShoutOutConfig"
     "Get-ShoutOutDefaultLog"
     "Get-ShoutOutLog"
