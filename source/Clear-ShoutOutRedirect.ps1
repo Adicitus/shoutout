@@ -1,7 +1,7 @@
 
 function Clear-ShoutOutLog {
     param(
-        [Parameter(HelpMessage="Mesage Type to remove redirection of.")]
+        [Parameter(HelpMessage="Mesage Type to remove handlers for.")]
         [string]$msgType
     )
 

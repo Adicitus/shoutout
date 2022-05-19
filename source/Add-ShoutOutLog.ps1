@@ -10,9 +10,9 @@ function Add-ShoutOutLog {
         [System.IO.FileInfo]$LogFile,
         [Parameter(ParameterSetName="Scriptblock", ValueFromPipeline=$true, Mandatory=$true, Position=2, HelpMessage="ScriptBlock to use as log handler.")]
         [scriptblock]$LogHandler,
-        [Parameter(Mandatory=$false)]
+        [Parameter(Mandatory=$false, HelpMessage="Causes the log handler to be registered on the global frame.")]
         [switch]$Global,
-        [Parameter(Mandatory=$false)]
+        [Parameter(Mandatory=$false, HelpMessage="Clear all log handlers for this message type on the current frame. If used with -Global this will remove all log handlers for the message type up to and including the global frame.")]
         [switch]$Reset
     )
 

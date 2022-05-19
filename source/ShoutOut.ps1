@@ -182,7 +182,6 @@ function shoutOut {
 
             "ErrorRecord" {
                 if ($null -ne $details.Message.Exception) {
-                    $recurseArgs | Out-string | shoutOut
                     shoutOut -Message $details.Message.Exception @recurseArgs
                 }
 
