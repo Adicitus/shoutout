@@ -53,10 +53,10 @@ Removes all logger redirections for the given $MsgType, all messages will be pas
 Returns the current configuration hashtable.
 
 #### Get-ShoutOutDefaultLog
-Returns the current default logger, this can be the path to a file or a scriptblock.
+Returns all default log handlers (with messagetype '*').
 
 #### Get-shoutOutRedirect $MsgType
-Returns the logger for the given $MsgType, returns $null if $MsgType is handled by the default logger.
+Returns all log handlers for the given $MsgType, returns $null if $MsgType is handled by the default logger.
 
 #### Set-ShoutOutConfig
 Managed way of setting ShoutOut settings.
@@ -76,7 +76,13 @@ There are 2 general types of log handlers:
 * Files
 * Scriptblocks
 
-ShoutOut always has 1 default log handler, however each MsgType may be redirected to a separate log handler.
+By default, log handlers are associated with the latest frame on the callstack where they are defined.
+
+Once the current context returns control back to the calling context, the handler is discarded.
+
+If you want a handler that should be valid at any depth of the call stack, use the '-Global' switch.
+
+When shoutout is called to log a message, it will traverse up the callstack to find any log handlers that should be used to handle the message, finally checking for global handlers.
 
 ### Files as log handlers
 This is the default way to handle logging: a log file is specified, and each call to shoutOut writes the record to that file synchronously.

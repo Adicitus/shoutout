@@ -4,14 +4,23 @@
 
 <#
 .SYNOPSIS
-Pushes a message of the given $MessageType to the given $Log file with attached invocation metadata.
+Pushes a message of the given $MessageType to the appropriate log handlers.
 .DESCRIPTION
-Logging function, used to push a message to a corresponding log-file.
-The message is prepended with meta data about the invocation to shoutOut as:
-<MessageType>|<Computer name>|<PID>|<calling Context>|<Date & time>|$Message
+Logging function, used to push a message to a corresponding log handlers.
+
+The default log handler type is a Record handler, in thich The message is prepended with meta data about
+the invocation to shoutOut as:
+
+<MessageType>|<Computer name>|<PID>|<calling Context>|<Date & time>|<Message object type>|<$Message as a string>
+
+The other types of log handlers are 'Message' (just receives the raw message object) and 'Details' (the raw message
+along with the same metadata that is summarized for the 'Record' type).
+
+If an ErrorRecord or Exception object is passed to shoutout, will attempt to expand the object
+to make the output of 'Record' type handlers more detailed.
 
 The default values for the parameters can be set using the Set-ShoutOutConfig,
-Set-ShoutOutDefaultLog, and Set-ShotOutRedirect functions.
+Set-ShoutOutDefaultLog, Set-ShotOutRedirect and Add-ShoutOutLog functions.
 
 .PARAMETER Message
 Message object to log.
