@@ -2,32 +2,19 @@ function Set-ShoutOutDefaultLog {
     param(
         [parameter(Mandatory=$true, ValueFromPipeline=$true, Position=1, ParameterSetName="LogFilePath")][String]$LogFilePath,
         [parameter(Mandatory=$true, ValueFromPipeline=$true, Position=1, ParameterSetName="LogFile")][System.IO.FileInfo]$LogFile,
-        [parameter(Mandatory=$true, ValueFromPipeline=$true, Position=1, ParameterSetName="LogHandler")][scriptblock]$LogHandler
+        [parameter(Mandatory=$true, ValueFromPipeline=$true, Position=1, ParameterSetName="LogHandler")][scriptblock]$LogHandler,
+        [Parameter(Mandatory=$false)][switch]$Global
     )
 
-    switch ($PSCmdlet.ParameterSetName) {
-        "LogFilePath" {
-            try {
-                _ensureShoutOutLogFile $LogFilePath -ErrorAction Stop | Out-Null
-                $LogHandler = _buildBasicFileLogger $LogFilePath
-            } catch {
-                return $_
-            }
-        }
-        "LogFile" {
-            try {
-                _ensureShoutOutLogFile $LogFile.FullName -ErrorAction Stop | Out-Null
-                $LogHandler = _buildBasicFileLogger $LogFile.FullName
-            } catch {
-                return $_
-            }
-        }
+    $redirectArgs = @{
+        MsgType = '*'
+        Reset   = $true
     }
 
-    try {
-        $_shoutOutSettings.DefaultLog = _validateShoutOutLogHandler $LogHandler -ErrorAction Stop
-    } catch {
-        return $_
+    $PSBoundParameters.GetEnumerator() | ForEach-Object {
+        $redirectArgs[$_.Key] = $_.Value 
     }
+
+    return Add-ShoutOutLog @redirectArgs
     
 }

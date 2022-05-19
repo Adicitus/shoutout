@@ -4,7 +4,7 @@
 
 <#
 .SYNOPSIS
-Pushes a message of the given $MsgType to the given $Log file with attached invocation metadata.
+Pushes a message of the given $MessageType to the given $Log file with attached invocation metadata.
 .DESCRIPTION
 Logging function, used to push a message to a corresponding log-file.
 The message is prepended with meta data about the invocation to shoutOut as:
@@ -71,7 +71,7 @@ function shoutOut {
         [Alias("ForegroundColor")]
         [Alias("MsgType")]
 		[parameter(Mandatory=$false, position=2, HelpMessage="The type of message log. If this is not specified it will be calculated based on the input type and shoutout configuration.")]
-        [String]$MesssageType=$null,
+        [String]$MessageType=$null,
 		[parameter(Mandatory=$false, position=3, HelpMessage="Path to a file or a Scriptblock to use to log the message.")]
         $Log=$null,
 		[parameter(Mandatory=$false, position=4, HelpMessage="How many levels to remove from the callstack when reporting the caller context. 0 will include the call to ShoutOut. Default is 1")]
@@ -96,10 +96,6 @@ function shoutOut {
         }
 
         <# Applying global variables #>
-        
-        if (!$Log -and $settings.containsKey("DefaultLog")) {
-            $Log = $settings.DefaultLog
-        }
 
         if (!$PSBoundParameters.ContainsKey('LogContext') -and $_ShoutOutSettings.ContainsKey("LogContext")) {
             $LogContext = $_ShoutOutSettings.LogContext
@@ -127,47 +123,41 @@ function shoutOut {
             "NULL"
         }
         
-        if ( (-not $PSBoundParameters.ContainsKey("MsgType")) -or ($null -eq $PSBoundParameters["MsgType"]) ) {
+        if ( (-not $PSBoundParameters.ContainsKey("MessageType")) -or ($null -eq $PSBoundParameters["MessageType"]) ) {
             
             switch ($details.ObjectType) {
 
                 "ErrorRecord" {
-                    $MsgType = "Error"
+                    $MessageType = "Error"
                 }
 
                 default {
                     if ([System.Exception].IsAssignableFrom($msgObjectType)) {
-                        $MsgType = "Exception"
+                        $MessageType = "Exception"
                     } else {
-                        $MsgType = $script:_ShoutOutSettings.DefaultMsgType
+                        $MessageType = $script:_ShoutOutSettings.DefaultMsgType
                     }
                 }
             }
         }
 
-        $details.MessageType = $MsgType
+        $details.MessageType = $MessageType
 
-        if ($settings.LogFileRedirection.ContainsKey($details.MessageType)) {
-            $Log = $settings.LogFileRedirection[$details.MessageType]
-        }
-
-        # Hard-coded defaults just in case.
-        if (!$Log) {
-            $Log = ".\shoutout.log"
-        }
-        
-        # If the log is  a string, assume that it is a file path:
-        $logHandler = Switch ($log.GetType().NAme) {
-            String {
-                _buildBasicFileLogger $Log
-            }
-            ScriptBlock {
-                $Log
+        $logHandlers = if ($null -eq $Log) {
+            _resolveLogHandler -MessageType $MessageType | ForEach-Object Handler
+        } else {
+            Switch ($log.GetType().Name) {
+                String {
+                    @{ Handler = @(_buildBasicFileLogger $Log) }
+                }
+                ScriptBlock {
+                    @{ Handler = $Log }
+                }
             }
         }
 
         $recurseArgs = @{}
-        $PSBoundParameters.Keys | Where-Object { $_ -notin "Message", "MsgType" } | ForEach-Object {
+        $PSBoundParameters.Keys | Where-Object { $_ -notin "Message", "MsgType", "MessageType" } | ForEach-Object {
             $recurseArgs[$_] = $PSBoundParameters[$_]
         }
         if ($recurseArgs.ContainsKey('ContextLevel')) {
@@ -192,7 +182,8 @@ function shoutOut {
 
             "ErrorRecord" {
                 if ($null -ne $details.Message.Exception) {
-                    shoutOut -Message $details.Message.Exception -MsgType Exception @recurseArgs
+                    $recurseArgs | Out-string | shoutOut
+                    shoutOut -Message $details.Message.Exception @recurseArgs
                 }
 
                 $m = $details.Message
@@ -283,32 +274,32 @@ function shoutOut {
             )
         }
 
-        try {
+        foreach ($handler in $logHandlers) {
+            try {
+                $handlerArgs = @{}
 
-            $handlerArgs = @{}
-
-            $LogHandler.Ast.ParamBlock.Parameters | ForEach-Object {
-                $n = $_.Name.Extent.Text.TrimStart('$')
-                switch ($n) {
-                    Message {
-                        $handlerArgs.$n = $details.Message
-                    }
-                    Record {
-                        $handlerArgs.$n = & $createRecord $details
-                    }
-                    Details {
-                        $handlerArgs.$n = $details
+                $handler.Ast.ParamBlock.Parameters | ForEach-Object {
+                    $n = $_.Name.Extent.Text.TrimStart('$')
+                    switch ($n) {
+                        Message {
+                            $handlerArgs.$n = $details.Message
+                        }
+                        Record {
+                            $handlerArgs.$n = & $createRecord $details
+                        }
+                        Details {
+                            $handlerArgs.$n = $details
+                        }
                     }
                 }
+
+                & $handler @handlerArgs
+
+            } catch {
+                "Failed to log: {0}" -f ($handlerArgs | Out-String) | Write-Error
+                "using log handler: '{0}'" -f $handler | Write-Error
+                $_ | Out-string | Write-Error
             }
-
-            & $LogHandler @handlerArgs
-
-        } catch {
-            "Failed to log: {0}" -f ($handlerArgs | Out-String) | Write-Error
-            "using log handler: {0}" -f $logHandler | Write-Error
-            $_ | Out-string | Write-Error
         }
-        
     }
 }

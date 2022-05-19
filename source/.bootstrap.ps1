@@ -15,6 +15,7 @@ function _buildBasicFileLogger {
 }
 
 
+# Default Configuration:
 $script:_ShoutOutSettings = @{
     DefaultMsgType="Info"
     LogFileRedirection=@{}
@@ -30,7 +31,14 @@ $script:_ShoutOutSettings = @{
     Disabled=$false
 }
 
+# Setting up default logging:
 $defaultLogFilename = "{0}.{1}.{2:yyyyMMddHHmmss}.log" -f $env:COMPUTERNAME, $pid, [datetime]::Now
 $defaultLogFile     = "{0}\AppData\local\ShoutOut\{1}" -f $env:USERPROFILE, $defaultLogFilename
-
 $script:_ShoutOutSettings.DefaultLog = _buildBasicFileLogger $defaultLogFile
+
+$script:logRegistry = @{
+    global = New-Object System.Collections.ArrayList
+}
+$script:hashCodeAttribute = 'MyInvocation'
+
+New-Alias 'Get-ShoutOutRedirect' -Value 'Get-ShoutOutLog'

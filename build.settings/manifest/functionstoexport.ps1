@@ -2,10 +2,11 @@
     "Clear-ShoutOutRedirect"
     "Get-ShoutOutConfig"
     "Get-ShoutOutDefaultLog"
-    "Get-ShoutOUtRedirect"
+    "Get-ShoutOutLog"
     "Set-ShoutOutConfig"
     "Set-ShoutOutDefaultLog"
     "Set-ShoutOutRedirect"
+    "Add-ShoutOutLog"
     "Invoke-ShoutOut"
     "ShoutOut"
 )
