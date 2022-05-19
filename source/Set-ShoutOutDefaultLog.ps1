@@ -1,9 +1,13 @@
 function Set-ShoutOutDefaultLog {
     param(
-        [parameter(Mandatory=$true, ValueFromPipeline=$true, Position=1, ParameterSetName="LogFilePath")][String]$LogFilePath,
-        [parameter(Mandatory=$true, ValueFromPipeline=$true, Position=1, ParameterSetName="LogFile")][System.IO.FileInfo]$LogFile,
-        [parameter(Mandatory=$true, ValueFromPipeline=$true, Position=1, ParameterSetName="LogHandler")][scriptblock]$LogHandler,
-        [Parameter(Mandatory=$false)][switch]$Global
+        [parameter(Mandatory=$true, ValueFromPipeline=$true, Position=1, ParameterSetName="LogFilePath", HelpMessage="Path to log file.")]
+        [String]$LogFilePath,
+        [parameter(Mandatory=$true, ValueFromPipeline=$true, Position=1, ParameterSetName="LogFile", HelpMessage="FileInfo object.")]
+        [System.IO.FileInfo]$LogFile,
+        [parameter(Mandatory=$true, ValueFromPipeline=$true, Position=1, ParameterSetName="LogHandler", HelpMessage="ScriptBlock to use as log handler.")]
+        [scriptblock]$LogHandler,
+        [Parameter(Mandatory=$false, HelpMessage="Causes the log handler to be registered on the global frame.")]
+        [switch]$Global
     )
 
     $redirectArgs = @{

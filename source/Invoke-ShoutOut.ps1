@@ -30,11 +30,16 @@ The following variable-names are restricted and may cause errors if they are use
 #>
 function Invoke-ShoutOut {
     param(
-        [parameter(ValueFromPipeline=$true, position=1)] $Operation,
-        [parameter()][Switch] $OutNull,
-        [parameter()][Switch] $NotStrict,
-        [parameter()][Switch] $LogErrorsOnly,
-        [parameter()][Switch] $Quiet
+        [parameter(ValueFromPipeline=$true, position=1, HelpMessage="Operation to perform. Should be a scripblock or a string describing a command to run.")]
+        $Operation,
+        [parameter(HelpMessage="Suppreses all output from the call.")]
+        [Switch] $OutNull,
+        [parameter(HelpMessage="Do not treat exceptions as fatal.")]
+        [Switch] $NotStrict,
+        [parameter(HelpMessage="Only log errors.")]
+        [Switch] $LogErrorsOnly,
+        [parameter(HelpMessage="Suppress output to console.")]
+        [Switch] $Quiet
     )
     $shoutOutArgs = @{
         Quiet = $PSBoundParameters.ContainsKey('Quiet')
