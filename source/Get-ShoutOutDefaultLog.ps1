@@ -1,5 +1,16 @@
 function Get-ShoutOutDefaultLog {
-    param()
+    param(
+        [Parameter(HelpMessage="Specifies that log handlers in all context should be removed, instead of just the current context.")]
+        [switch]$Global
+    )
 
-    return Get-ShoutOutLog -MessageType '*'
+    $getArgs = @{
+        MessageType = '*'
+    }
+
+    if ($Global) {
+        $getArgs.Global = $true
+    }
+
+    return Get-ShoutOutLog @getArgs
 }

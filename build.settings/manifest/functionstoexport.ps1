@@ -3,6 +3,7 @@
     "Get-ShoutOutConfig"
     "Get-ShoutOutDefaultLog"
     "Get-ShoutOutLog"
+    "Remove-ShoutOutLog"
     "Set-ShoutOutConfig"
     "Set-ShoutOutDefaultLog"
     "Set-ShoutOutRedirect"
