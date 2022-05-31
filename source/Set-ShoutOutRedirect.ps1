@@ -1,5 +1,5 @@
 function Set-ShoutOutRedirect {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName="DirectoryPath")]
     param(
         [parameter(Mandatory=$true, Position=1, HelpMessage="Message type to redirect.")]
         [Alias('MsgType')]

@@ -1,4 +1,5 @@
 function Set-ShoutOutDefaultLog {
+    [CmdletBinding(DefaultParameterSetName="DirectoryPath")]
     param(
         [parameter(Mandatory=$true, ValueFromPipeline=$true, Position=1, ParameterSetName="LogFilePath", HelpMessage="Path to log file.")]
         [String]$LogFilePath,
