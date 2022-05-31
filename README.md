@@ -228,19 +228,30 @@ Writing to Console is current performed using the Write-Host Cmdlet, however "Fo
 Used to turn off logging if necessary.
 
 ## Background
-When I first started learning PowerShell I would use Write-Host to report whart my scripts were doing. As the scripts got longer and more advancesd I started using colors to signify what type of information the script was displaying.
+When I first started learning PowerShell I would use Write-Host to report what my scripts were doing. As the scripts got longer and more advanced I started using colors to signify what type of information the script was displaying.
 
 I could have used the standard streams (Error, Warning, Verbose, Debug, Output), but these have added functionality that wasn't desirable most of the time (Warning & Verbose are only visible if explicitly specified that they should be, Debug stops after each call by default, Error can cause a script to terminate prematurely, and "Output" polutes the return values of the script). They are each useful in their own ways, but not for writing expressive, easy-to-read output.
 
-When the scripts I wrote started running unsupervised, I needed a way to capture and log as much of that information as possible. Start-Transcript would have been the obvious option, but I found that it didn't capture useful metadata:
+When the scripts I wrote started running unsupervised, I needed a way to capture and log as much of that information as possible. Start-Transcript would have been the obvious option, but I found that it had no way of capturing useful metadata:
  - In what script did the logged output occur?
  - On What line?
  - When?
  - What type of object did it record?
  - Why did it record that object?)
 
-Start-Transcript also requires the user to strictly control it's lifespan (by calling Stop-Transcript). If Start-Transcript fails to access the file for whatever reason Transcription will simply not start. If the no Transcription is running and you call Stop-Transcript, it will cause an error (that may cause the script to terminate early). And to top it all off, there is no simple way to determine if the session is being transcribed.
+Transcription also has several other drawbacks:
+ - Start-Transcript must be matched by a corresponding Stop-Transcript to indicate that the current transcription session should end.
+ - If Start-Transcript fails to access the file for whatever reason Transcription will simply not start.
+ - If the no Transcription is running and you call Stop-Transcript, it will cause an error (that may cause the script to terminate early).
+ - There is no simple way to determine if transcription is running, or how many layers.
 
-What I needed was a logging enigne that was easy to introduce to new scripts, would capture as much information as possible and log as much of that information as possible, while also providing easy to read output for anyone who happens to be looking at the console.
+What I needed was a logging engine that was easy to introduce to new scripts, would capture as much information as possible and log as much of that information as possible, while also providing easy to read output for anyone who happens to be looking at the console.
 
 ShoutOut is my attempt to create such a logging engine.
+
+### Trivia
+Originally 'shoutout' was designed as a drop-in replacement for Write-Host (hence why -ForegroundColor is an alias for -MessageType) that would write messages to both the console and a file. In the years since then, ShoutOut has evolved to match the increasingly complex needs of my work as an IT administrator, but the following still works just fine:
+
+```
+shoutout 'Hello World' Magenta
+```
