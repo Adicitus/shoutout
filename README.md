@@ -141,6 +141,10 @@ This has the upside of creating a comprehensive, plain-text file that can be con
 
 The downside is that the logged records cannot be made available to other processes or otherwise distributed: everything ends up in the file.
 
+#### Output encoding
+
+The records will be written to the log file as UTF8.
+
 ### Folders as log handlers
 
 By using the -LogDirectory and -LogDirectoryPath parameters you can tell shoutout to log messages to files in the specified Folder.
@@ -150,10 +154,6 @@ Each log file in the directory will be handled as defined in "Files as log handl
 Each log handler of this type will write to a unique file in the directory, and each log handler will periodically (every 15 minutes) clean the out old .log files from the directory to keep bloat down (log files are kept for 14 days).
 
 This is the default type of log handler as of v5.0.0, and the default log directory is '%USERPROFILE%\AppData\Local\shoutout'
-
-#### Output encoding
-
-The records will be written to the log file as UTF8.
 
 ### ScriptBlocks as log handlers
 
@@ -237,7 +237,7 @@ When the scripts I wrote started running unsupervised, I needed a way to capture
  - On What line?
  - When?
  - What type of object did it record?
- - Why did it record that object?)
+ - Why did it record that object?
 
 Transcription also has several other drawbacks:
  - Start-Transcript must be matched by a corresponding Stop-Transcript to indicate that the current transcription session should end.
@@ -250,7 +250,9 @@ What I needed was a logging engine that was easy to introduce to new scripts, wo
 ShoutOut is my attempt to create such a logging engine.
 
 ### Trivia
-Originally 'shoutout' was designed as a drop-in replacement for Write-Host (hence why -ForegroundColor is an alias for -MessageType) that would write messages to both the console and a file. In the years since then, ShoutOut has evolved to match the increasingly complex needs of my work as an IT administrator, but the following still works just fine:
+Originally 'shoutout' was designed as a drop-in replacement for Write-Host (hence why -ForegroundColor is an alias for -MessageType) that would write messages to both the console and a file.
+
+In the years since then, ShoutOut has evolved to match the increasingly complex needs of my work as an IT administrator, but the following still works just fine:
 
 ```
 shoutout 'Hello World' Magenta
