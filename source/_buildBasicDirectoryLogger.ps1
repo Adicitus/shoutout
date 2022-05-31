@@ -11,25 +11,27 @@ function _buildBasicDirectoryLogger {
         [timespan]$RetentionTime = "14:0:0:0.0"
     )
 
-
     $filename = '{0}.{1}.{2}.{3}.log' -f $name, $env:USERNAME, $PID, [datetime]::Now.ToString('o').replace(':', '')
     $filePath = '{0}/{1}' -f $DirectoryPath, $filename
 
-    $cleanupState = @{}
+    $cleanupState = @{
+        Id = [guid]::NewGuid().guid
+    }
 
     $Cleanup = {
         param(
             $DirectoryPath,
             $RetentionTime
         )
-        Get-Variable | Out-string > "~\tmp.txt"
+        
         Get-ChildItem -Path $DirectoryPath -Filter *.log -File | Where-Object {
             ([datetime]::Now - $_.LastWriteTime) -gt $RetentionTime
         } | Remove-Item
     }
 
     $startCleanup = {
-        $job = Start-Job -ScriptBlock $Cleanup -Name 'Cleanup' -ArgumentList $DirectoryPath, $RetentionTime
+        $jobName = 'DirectoryLoggerCleanup.{0}' -f $cleanupState.Id
+        $job = Start-Job -ScriptBlock $Cleanup -Name $jobName -ArgumentList $DirectoryPath, $RetentionTime
         
         Register-ObjectEvent -InputObject $job -EventName StateChanged -Action {
             Unregister-Event $EventSubscriber.SourceIdentifier
@@ -59,7 +61,7 @@ function _buildBasicDirectoryLogger {
         $Record | Out-File -FilePath $filePath -Encoding utf8 -Append
         
         # Perform log directory cleanup:
-        if (([datetime]::Now - $cleanupState.LastCleanup).TotalMinutes -ge $CleanupIntervalMinutes) {
+        if (([datetime]::Now - $cleanupState.LastCleanup) -ge $CleanupInterval) {
             & $startCleanup
         }
 
