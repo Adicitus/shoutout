@@ -8,6 +8,10 @@ function Add-ShoutOutLog {
         [string]$LogFilePath,
         [Parameter(ParameterSetName="FileInfo", ValueFromPipeline=$true, Mandatory=$true, Position=2, HelpMessage="FileInfo object.")]
         [System.IO.FileInfo]$LogFile,
+        [Parameter(ParameterSetName="DirectoryPath", ValueFromPipeline=$true, Mandatory=$true, Position=2, HelpMessage="Path to log file.")]
+        [string]$LogDirectoryPath,
+        [Parameter(ParameterSetName="DirectoryInfo", ValueFromPipeline=$true, Mandatory=$true, Position=2, HelpMessage="Path to log file.")]
+        [System.IO.DirectoryInfo]$LogDirectory,
         [Parameter(ParameterSetName="Scriptblock", ValueFromPipeline=$true, Mandatory=$true, Position=2, HelpMessage="ScriptBlock to use as log handler.")]
         [scriptblock]$LogHandler,
         [Parameter(Mandatory=$false, HelpMessage="Causes the log handler to be registered on the global frame.")]
@@ -29,6 +33,20 @@ function Add-ShoutOutLog {
             try {
                 _ensureShoutOutLogFile $LogFilePath $MessageType | Out-Null
                 $LogHandler = _buildBasicFileLogger $LogFilePath
+            } catch {
+                return $_
+            }
+        }
+        "DirectoryInfo" {
+            try {
+                $LogHandler = _buildBasicDirectoryLogger $LogDirectory.FullName
+            } catch {
+                return $_
+            }
+        }
+        "DirectoryPath" {
+            try {
+                $LogHandler = _buildBasicDirectoryLogger $LogDirectoryPath
             } catch {
                 return $_
             }

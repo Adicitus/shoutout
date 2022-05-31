@@ -4,10 +4,10 @@ function Set-ShoutOutConfig {
         [string]$DefaultMsgType,
         [Parameter(HelpMessage="Enable/Disable Context logging.")]
         [Alias("LogContext")]
-        [boolean]$EnableContextLogging,
+        [bool]$EnableContextLogging,
         [Parameter(HelpMessage="Disable/Enable ShoutOut.")]
         [Alias("Disabled")]
-        [boolean]$DisableLogging
+        [bool]$DisableLogging
     )
 
     if ($PSBoundParameters.ContainsKey("DefaultMsgType")) {

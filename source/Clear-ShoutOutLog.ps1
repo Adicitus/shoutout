@@ -10,7 +10,7 @@ function Clear-ShoutOutLog {
         [Parameter(Mandatory=$true, Position=1, HelpMessage="Mesage Type to remove handlers for.")]
         [Alias('MsgType')]
         [string]$MessageType,
-        [Parameter(Mandatory=$false)]
+        [Parameter(Mandatory=$false, HelpMessage="Causes all log handlers for the given message type to be removed")]
         [Switch]$Global
     )
 

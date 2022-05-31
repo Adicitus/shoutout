@@ -23,9 +23,8 @@ New-Alias 'Get-ShoutOutRedirect' -Value 'Get-ShoutOutLog'
 New-Alias 'Clear-ShoutOutRedirect' -Value 'Clear-ShoutOutLog'
 
 # Setting up default logging:
-$defaultLogFilename = "{0}.{1}.{2:yyyyMMddHHmmss}.log" -f $env:COMPUTERNAME, $pid, [datetime]::Now
-$defaultLogFile     = "{0}\AppData\local\ShoutOut\{1}" -f $env:USERPROFILE, $defaultLogFilename
-$script:DefaultLog = _buildBasicFileLogger $defaultLogFile
+$defaultLogFolder = "{0}\AppData\local\ShoutOut" -f $env:USERPROFILE
+$script:DefaultLog = _buildBasicDirectoryLogger $defaultLogFolder
 
 Set-ShoutOutDefaultLog -LogHandler $script:DefaultLog -Global
 
