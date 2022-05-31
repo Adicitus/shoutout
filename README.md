@@ -3,13 +3,11 @@
 
 ShoutOut is a PowerShell-native logging utility that is intended to be easy to get started with while also allowing for extension as necessary.
 
-The "ShoutOut" command at it's most basic takes a message. That message to be displayed in the console and passed to a logger.
+## Basic Usage
 
-Each message can have an associated Meesage Type ("MsgType", defaults to "Info"), that will be included in the log record and may be used to determine
+The "ShoutOut" command at it's most basic takes a message. That message to be displayed in the console and passed to a logger. Each message can have an associated Meesage Type ("MsgType", defaults to "Info"), that will be included in the log record and may be used to determine how the message is displayed in the console and which logger should handle the message.
 
-how the message is displayed in the console and which logger should handle the message.
-
-By default messages are logged as Records like this:
+By default messages are logged to the "%USERPROFILE%\AppData\Local\shoutout" folder as Records like this:
 
 ````
 
@@ -53,7 +51,7 @@ Hovever custom log handlers can be defined by specifying LogHandler on Set-Shout
 
 Log handlers allow you to perform custom manipulation and storage of messages.
 
-## Build instructions
+## Installation
 
 This repository is in Module Project format, all scripts and assets that are to be included in the module are located under the "source directory".
 
@@ -121,26 +119,37 @@ The core Cmdlet used to log messages.
 
 ## Log handlers
 
-There are 2 general types of log handlers:
+There are 3 general types of log handlers:
 
 * Files
+* Directories
 * Scriptblocks
 
-By default, log handlers are associated with the latest frame on the callstack where they are defined.
+By default, log handlers are attached with the latest frame on the callstack where they are defined. Once the current context returns control back to the calling context, the handler is discarded.
 
-Once the current context returns control back to the calling context, the handler is discarded.
+That is to say they will be used until the current script, function or Cmdlet has finished running, and then be discarded.
 
-If you want a handler that should be valid at any depth of the call stack, use the '-Global' switch.
+If you want to set a handler that should receive all messages, use the '-Global' switch. This is necessary if you are setting a log handler from the command line.
 
 When shoutout is called to log a message, it will traverse up the callstack to find any log handlers that should be used to handle the message, finally checking for global handlers.
 
 ### Files as log handlers
 
-This is the default way to handle logging: a log file is specified, and each call to shoutOut writes the record to that file synchronously.
+By using the -LogFile and -LogFilePath parameters you can instruct shoutout to log messages to to a file, and each call to shoutOut writes the record to that file synchronously.
 
 This has the upside of creating a comprehensive, plain-text file that can be consulted for audit without any special tools.
 
-The downside is that the logged records cannot be made available to other processes or otherwise dsitributed: everything ends up in the file.
+The downside is that the logged records cannot be made available to other processes or otherwise distributed: everything ends up in the file.
+
+### Folders as log handlers
+
+By using the -LogDirectory and -LogDirectoryPath parameters you can tell shoutout to log messages to files in the specified Folder.
+
+Each log file in the directory will be handled as defined in "Files as log handlers".
+
+Each log handler of this type will write to a unique file in the directory, and each log handler will periodically (every 15 minutes) clean the out old .log files from the directory to keep bloat down (log files are kept for 14 days).
+
+This is the default type of log handler as of v5.0.0, and the default log directory is '%USERPROFILE%\AppData\Local\shoutout'
 
 #### Output encoding
 
@@ -197,10 +206,7 @@ You can use any combination of these parameters when creating a ScriptBlock hand
 
 The following settings are available to modify the behavior of ShoutOut.
 
-  
-
 All settings are available through the hashtable returneed by "Get-ShoutOutConfig", howevere most settigns (with the exception of MsgStyles) have dedicated Cmdlets.
-
   
 
 #### [string] DefaultMsgType (Set using "Set-ShoutOutConfig")
@@ -220,3 +226,21 @@ Writing to Console is current performed using the Write-Host Cmdlet, however "Fo
 #### [bool] DisableLogging (Set using "Set-ShoutOutConfig")
 
 Used to turn off logging if necessary.
+
+## Background
+When I first started learning PowerShell I would use Write-Host to report whart my scripts were doing. As the scripts got longer and more advancesd I started using colors to signify what type of information the script was displaying.
+
+I could have used the standard streams (Error, Warning, Verbose, Debug, Output), but these have added functionality that wasn't desirable most of the time (Warning & Verbose are only visible if explicitly specified that they should be, Debug stops after each call by default, Error can cause a script to terminate prematurely, and "Output" polutes the return values of the script). They are each useful in their own ways, but not for writing expressive, easy-to-read output.
+
+When the scripts I wrote started running unsupervised, I needed a way to capture and log as much of that information as possible. Start-Transcript would have been the obvious option, but I found that it didn't capture useful metadata:
+ - In what script did the logged output occur?
+ - On What line?
+ - When?
+ - What type of object did it record?
+ - Why did it record that object?)
+
+Start-Transcript also requires the user to strictly control it's lifespan (by calling Stop-Transcript). If Start-Transcript fails to access the file for whatever reason Transcription will simply not start. If the no Transcription is running and you call Stop-Transcript, it will cause an error (that may cause the script to terminate early). And to top it all off, there is no simple way to determine if the session is being transcribed.
+
+What I needed was a logging enigne that was easy to introduce to new scripts, would capture as much information as possible and log as much of that information as possible, while also providing easy to read output for anyone who happens to be looking at the console.
+
+ShoutOut is my attempt to create such a logging engine.
