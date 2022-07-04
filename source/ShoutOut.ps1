@@ -109,6 +109,9 @@ function shoutOut {
         if (!$PSBoundParameters.ContainsKey('LogContext') -and $_ShoutOutSettings.ContainsKey("LogContext")) {
             $LogContext = $_ShoutOutSettings.LogContext
         }
+        if (!$PSBoundParameters.ContainsKey('Quiet') -and $_ShoutOutSettings.ContainsKey("Quiet")) {
+            $Quiet = $_ShoutOutSettings.Quiet
+        }
     }
 
     process {

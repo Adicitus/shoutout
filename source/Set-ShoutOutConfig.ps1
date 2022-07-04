@@ -7,7 +7,10 @@ function Set-ShoutOutConfig {
         [bool]$EnableContextLogging,
         [Parameter(HelpMessage="Disable/Enable ShoutOut.")]
         [Alias("Disabled")]
-        [bool]$DisableLogging
+        [bool]$DisableLogging,
+        [Parameter(HelpMessage="Disable/Enable console logging.")]
+        [Alias("Silent")]
+        [bool]$Quiet
     )
 
     if ($PSBoundParameters.ContainsKey("DefaultMsgType")) {
@@ -20,6 +23,10 @@ function Set-ShoutOutConfig {
     
     if ($PSBoundParameters.ContainsKey("Disabled")) {
         $_shoutOutSettings.Disabled = $Disabled
+    }
+    
+    if ($PSBoundParameters.ContainsKey("Quiet")) {
+        $_shoutOutSettings.Quiet = $Quiet
     }
 
 }

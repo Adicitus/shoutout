@@ -12,6 +12,7 @@ $script:_ShoutOutSettings = @{
     }
     LogContext=$true
     Disabled=$false
+    Quiet=$false
 }
 
 $script:logRegistry = @{
